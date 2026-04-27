@@ -1,0 +1,144 @@
+name: btb-android
+version: '3.8'
+
+# =============================================
+# BusTicketBooking Mobile - Docker Compose
+# Prefix: btb-mobile (tách biệt với project cũ)
+# =============================================
+
+services:
+  # ===== Spring Boot Backend =====
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: btb-mobile-backend
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - FIREBASE_CONFIG_FILE=${FIREBASE_CONFIG_FILE:-firebase-service-account.json}
+    volumes:
+      - ./backend/src/main/resources/firebase-service-account.json:/app/config/firebase-service-account.json:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - btb-mobile-network
+    restart: unless-stopped
+
+  # ===== MySQL 8.0 =====
+  mysql:
+    image: mysql:8.0
+    container_name: btb-mobile-mysql
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - btb_mobile_mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+      --max-connections=200
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - btb-mobile-network
+    restart: unless-stopped
+
+  # ===== Redis 7 =====
+  redis:
+    image: redis:7-alpine
+    container_name: btb-mobile-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - btb_mobile_redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - btb-mobile-network
+    restart: unless-stopped
+
+  # ===== RabbitMQ 3.13 with Management =====
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: btb-mobile-rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      - RABBITMQ_DEFAULT_VHOST=/
+    volumes:
+      - btb_mobile_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - btb-mobile-network
+    restart: unless-stopped
+
+  # ===== phpMyAdmin =====
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: btb-mobile-phpmyadmin
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=root
+      - PMA_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - btb-mobile-network
+    restart: unless-stopped
+
+# ===== Volumes =====
+volumes:
+  btb_mobile_mysql_data:
+    driver: local
+  btb_mobile_redis_data:
+    driver: local
+  btb_mobile_rabbitmq_data:
+    driver: local
+
+# ===== Networks =====
+networks:
+  btb-mobile-network:
+    driver: bridge

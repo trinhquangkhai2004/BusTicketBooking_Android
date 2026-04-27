@@ -1,0 +1,39 @@
+# ===== Android =====
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# ===== Backend =====
+backend/build/
+backend/.gradle/
+backend/out/
+backend/bin/
+
+# ===== Environment =====
+.env
+!.env.example
+
+# ===== Firebase =====
+**/firebase-service-account.json
+
+# ===== Docker =====
+docker/mysql/data/
+docker/redis/data/
+
+# ===== IDE =====
+.idea/
+*.ipr
+*.iws
+.vscode/
