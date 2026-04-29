@@ -31,15 +31,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ---------------------------------------------------------------------------
+
 // Data
-// ---------------------------------------------------------------------------
+
 val LOCATIONS = listOf("Đà Nẵng", "Huế", "Hội An", "Quy Nhơn", "Quảng Ngãi", "Tam Kỳ")
 val DATES = listOf("07 Th04", "08 Th04", "09 Th04", "10 Th04", "11 Th04", "12 Th04", "13 Th04")
 
-// ---------------------------------------------------------------------------
 // 1. Core Home Screen Orchestrator
-// ---------------------------------------------------------------------------
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -63,9 +62,9 @@ fun HomeScreen(
     }
 }
 
-// ---------------------------------------------------------------------------
+
 // 2. Hero Image and Overlapping Search Card
-// ---------------------------------------------------------------------------
+
 @Composable
 fun HeroAndSearchSection(onSearchClick: (String, String, String) -> Unit) {
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -104,9 +103,8 @@ fun HeroAndSearchSection(onSearchClick: (String, String, String) -> Unit) {
     }
 }
 
-// ---------------------------------------------------------------------------
 // 3. Header Overlay
-// ---------------------------------------------------------------------------
+
 @Composable
 fun HomeHeaderOverlay() {
     var locationExpanded by remember { mutableStateOf(false) }
@@ -156,9 +154,9 @@ fun HomeHeaderOverlay() {
     }
 }
 
-// ---------------------------------------------------------------------------
+
 // 4. Advanced Search Card with TextField + Calendar Date Picker
-// ---------------------------------------------------------------------------
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
@@ -348,9 +346,9 @@ fun LocationDropdownField(
     }
 }
 
-// ---------------------------------------------------------------------------
+
 // 5. Popular Routes Section
-// ---------------------------------------------------------------------------
+
 @Composable
 fun PopularRoutesSection() {
     Column(
@@ -392,9 +390,9 @@ fun PopularRoutesSection() {
     }
 }
 
-// ---------------------------------------------------------------------------
+
 // 6. Floating Bottom Navigation Bar
-// ---------------------------------------------------------------------------
+
 @Composable
 fun FloatingBottomNavigationBar(onLogoutClick: () -> Unit) {
     var selectedIndex by remember { mutableStateOf(0) }
