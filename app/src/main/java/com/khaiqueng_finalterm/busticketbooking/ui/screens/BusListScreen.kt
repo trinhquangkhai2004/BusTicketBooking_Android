@@ -24,36 +24,11 @@ import androidx.compose.ui.unit.sp
 import com.khaiqueng_finalterm.busticketbooking.ui.components.BusTicketCard
 import com.khaiqueng_finalterm.busticketbooking.ui.theme.PrimaryBlue
 
-// ---------------------------------------------------------------------------
-// Mock Data Model
-// ---------------------------------------------------------------------------
-data class BusTrip(
-    val departureTime: String,
-    val arrivalTime: String,
-    val from: String,
-    val to: String,
-    val duration: String,
-    val busType: String,
-    val statusText: String,
-    val price: String
-)
-
-val ALL_TRIPS = listOf(
-    BusTrip("08:40 SA", "11:10 SA", "Đà Nẵng", "Huế",       "2h 30m • Đi thẳng",   "Xe Khách Đi Thẳng", "Sắp hết chỗ",   "150.000đ"),
-    BusTrip("10:00 SA", "12:30 CH", "Đà Nẵng", "Huế",       "2h 30m • Đi thẳng",   "Xe Giường Nằm",     "Còn nhiều chỗ", "180.000đ"),
-    BusTrip("14:00 CH", "16:30 CH", "Đà Nẵng", "Huế",       "2h 30m • Đi thẳng",   "Xe Khách Đi Thẳng", "Còn nhiều chỗ", "150.000đ"),
-    BusTrip("08:00 SA", "08:45 SA", "Đà Nẵng", "Hội An",    "0h 45m • Đi thẳng",   "Xe Khách Đi Thẳng", "Sắp hết chỗ",   "50.000đ"),
-    BusTrip("10:30 SA", "11:15 SA", "Đà Nẵng", "Hội An",    "0h 45m • Đi thẳng",   "Xe Khách Đi Thẳng", "Còn nhiều chỗ", "50.000đ"),
-    BusTrip("09:00 SA", "02:30 CH", "Đà Nẵng", "Quy Nhơn",  "5h 30m • Đi thẳng",   "Xe Giường Nằm",     "Chỉ còn 3 chỗ", "250.000đ"),
-    BusTrip("22:00 CH", "03:30 SA", "Đà Nẵng", "Quy Nhơn",  "5h 30m • Đêm",        "Xe Giường Nằm VIP", "Còn nhiều chỗ", "280.000đ"),
-    BusTrip("07:30 SA", "09:30 SA", "Đà Nẵng", "Quảng Ngãi","2h 00m • Đi thẳng",   "Xe Khách Đi Thẳng", "Còn nhiều chỗ", "120.000đ"),
-    BusTrip("06:30 SA", "08:00 SA", "Đà Nẵng", "Tam Kỳ",    "1h 30m • Đi thẳng",   "Xe Khách Đi Thẳng", "Còn nhiều chỗ", "80.000đ"),
-    BusTrip("07:00 SA", "09:30 SA", "Huế",      "Đà Nẵng",   "2h 30m • Đi thẳng",  "Xe Khách Đi Thẳng", "Sắp hết chỗ",   "150.000đ"),
-    BusTrip("13:00 CH", "15:30 CH", "Huế",      "Đà Nẵng",   "2h 30m • Đi thẳng",  "Xe Giường Nằm",     "Còn nhiều chỗ", "180.000đ"),
-    BusTrip("09:00 SA", "10:30 SA", "Hội An",   "Đà Nẵng",   "0h 45m • Đi thẳng",  "Xe Khách Đi Thẳng", "Còn nhiều chỗ", "50.000đ"),
-    BusTrip("08:00 SA", "01:30 CH", "Huế",      "Quy Nhơn",  "5h 30m • Đi thẳng",  "Xe Giường Nằm",     "Còn nhiều chỗ", "280.000đ"),
-    BusTrip("08:00 SA", "10:00 SA", "Hội An",   "Huế",       "2h 00m • Đi thẳng",  "Xe Khách Đi Thẳng", "Còn nhiều chỗ", "130.000đ"),
-)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.BusListViewModel
+import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.BusListUiState
+import java.text.NumberFormat
+import java.util.Locale
 
 // ---------------------------------------------------------------------------
 // BusListScreen
@@ -69,14 +44,16 @@ fun BusListScreen(
 ) {
     val backgroundColor = Color(0xFFF5F7FA)
     var currentDate by remember { mutableStateOf(selectedDate) }
+    
+    val viewModel: BusListViewModel = viewModel()
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Filter trips — so sánh không phân biệt hoa thường, có thể nhập một phần tên
-    val fromTrimmed = fromLocation.trim()
-    val toTrimmed = toLocation.trim()
-    val filteredTrips = ALL_TRIPS.filter {
-        (fromTrimmed.isEmpty() || it.from.contains(fromTrimmed, ignoreCase = true)) &&
-        (toTrimmed.isEmpty() || it.to.contains(toTrimmed, ignoreCase = true))
+    // Gọi API khi tham số thay đổi
+    LaunchedEffect(fromLocation, toLocation, currentDate) {
+        viewModel.searchTrips(fromLocation, toLocation, currentDate)
     }
+
+    val formatCurrency = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
 
     Scaffold(
         containerColor = backgroundColor,
@@ -135,8 +112,9 @@ fun BusListScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val tripCount = if (uiState is BusListUiState.Success) (uiState as BusListUiState.Success).trips.size else 0
                 Text(
-                    text = "Chuyến đi (${filteredTrips.size})",
+                    text = "Chuyến đi ($tripCount)",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1F2937)
@@ -154,42 +132,63 @@ fun BusListScreen(
                 }
             }
 
-            // Bus List
-            if (filteredTrips.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("😔", fontSize = 48.sp)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Không có chuyến xe\n$fromLocation → $toLocation",
-                            fontSize = 16.sp,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
+            when (val state = uiState) {
+                is BusListUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = PrimaryBlue)
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 24.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp)
-                ) {
-                    items(filteredTrips) { trip ->
-                        BusTicketCard(
-                            departureTime = trip.departureTime,
-                            arrivalTime = trip.arrivalTime,
-                            departureLocation = trip.from,
-                            arrivalLocation = trip.to,
-                            duration = trip.duration,
-                            busType = trip.busType,
-                            statusText = trip.statusText,
-                            price = trip.price,
-                            onClick = onBusClick
-                        )
+                is BusListUiState.Error -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(state.message, color = Color.Red, fontSize = 16.sp)
+                    }
+                }
+                is BusListUiState.Success -> {
+                    if (state.trips.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("😔", fontSize = 48.sp)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Không có chuyến xe\n$fromLocation → $toLocation",
+                                    fontSize = 16.sp,
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp),
+                            contentPadding = PaddingValues(bottom = 24.dp)
+                        ) {
+                            items(state.trips) { trip ->
+                                // Chuyển đổi thời gian backend (vd: "2026-05-09T08:00:00") sang "08:00"
+                                val depTimeStr = trip.departureTime.split("T").lastOrNull()?.take(5) ?: trip.departureTime
+                                val arrTimeStr = trip.arrivalTime.split("T").lastOrNull()?.take(5) ?: trip.arrivalTime
+                                
+                                val statusText = if (trip.availableSeats > 5) "Còn nhiều chỗ" 
+                                                 else if (trip.availableSeats > 0) "Chỉ còn ${trip.availableSeats} chỗ" 
+                                                 else "Đã hết chỗ"
+
+                                BusTicketCard(
+                                    departureTime = depTimeStr,
+                                    arrivalTime = arrTimeStr,
+                                    departureLocation = trip.departureLocation.name,
+                                    arrivalLocation = trip.arrivalLocation.name,
+                                    duration = trip.duration,
+                                    busType = trip.bus.type,
+                                    statusText = statusText,
+                                    price = formatCurrency.format(trip.price),
+                                    onClick = onBusClick
+                                )
+                            }
+                        }
                     }
                 }
             }

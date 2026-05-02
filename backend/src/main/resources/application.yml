@@ -1,5 +1,9 @@
 server:
-  port: 8080
+  port: ${BACKEND_PORT:8088}
+  error:
+    include-stacktrace: never
+    include-exception: false
+    include-message: always
 
 spring:
   application:
@@ -7,7 +11,7 @@ spring:
 
   # ===== MySQL =====
   datasource:
-    url: jdbc:mysql://localhost:3307/bus_ticket_booking?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3308/bus_ticket_booking?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
     username: ${MYSQL_USER:busticket}
     password: ${MYSQL_PASSWORD:busticket123}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -29,14 +33,14 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      port: ${REDIS_PORT:6380}
       password: ${REDIS_PASSWORD:redis123}
       timeout: 5000
 
   # ===== RabbitMQ =====
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    port: ${RABBITMQ_PORT:5673}
     username: ${RABBITMQ_USER:busticket}
     password: ${RABBITMQ_PASSWORD:busticket123}
     virtual-host: /

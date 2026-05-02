@@ -1,5 +1,4 @@
 name: btb-android
-version: '3.8'
 
 # =============================================
 # BusTicketBooking Mobile - Docker Compose
@@ -28,7 +27,7 @@ services:
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
       - FIREBASE_CONFIG_FILE=${FIREBASE_CONFIG_FILE:-firebase-service-account.json}
     volumes:
-      - ./backend/src/main/resources/firebase-service-account.json:/app/config/firebase-service-account.json:ro
+      - ./backend/src/main/resources:/app/config:ro
     depends_on:
       mysql:
         condition: service_healthy

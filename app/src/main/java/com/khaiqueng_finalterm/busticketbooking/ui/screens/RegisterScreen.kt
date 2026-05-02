@@ -17,10 +17,12 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khaiqueng_finalterm.busticketbooking.ui.theme.PrimaryBlue
+import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.AuthUiState
 
 @Composable
 fun RegisterScreen(
-    onRegisterSuccess: () -> Unit,
+    uiState: AuthUiState,
+    onRegisterClick: (String, String, String) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
     var fullName by remember { mutableStateOf(TextFieldValue("")) }
@@ -108,15 +110,44 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        uiState.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 14.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        uiState.successMessage?.let { message ->
+            Text(
+                text = message,
+                color = Color(0xFF15803D),
+                fontSize = 14.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         Button(
-            onClick = onRegisterSuccess,
+            onClick = { onRegisterClick(fullName.text, email.text, password.text) },
+            enabled = !uiState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Đăng ký", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Đăng ký", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -132,7 +163,7 @@ fun RegisterScreen(
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                modifier = Modifier.clickable { onNavigateToLogin() }
+                modifier = Modifier.clickable(enabled = !uiState.isLoading) { onNavigateToLogin() }
             )
         }
     }

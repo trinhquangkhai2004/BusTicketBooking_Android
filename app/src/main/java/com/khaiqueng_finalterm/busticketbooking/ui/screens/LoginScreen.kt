@@ -17,10 +17,12 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khaiqueng_finalterm.busticketbooking.ui.theme.PrimaryBlue
+import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.AuthUiState
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    uiState: AuthUiState,
+    onLoginClick: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf(TextFieldValue("")) }
@@ -89,15 +91,34 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        uiState.errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 14.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
         Button(
-            onClick = onLoginSuccess,
+            onClick = { onLoginClick(email.text, password.text) },
+            enabled = !uiState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text("Đăng nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Đăng nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -113,7 +134,7 @@ fun LoginScreen(
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                modifier = Modifier.clickable { onNavigateToRegister() }
+                modifier = Modifier.clickable(enabled = !uiState.isLoading) { onNavigateToRegister() }
             )
         }
     }
