@@ -33,7 +33,13 @@ class AuthViewModel : ViewModel() {
                     _uiState.value = AuthUiState(isAuthenticated = true)
                 }
                 .onFailure { error ->
-                    _uiState.value = AuthUiState(errorMessage = error.message ?: "Dang nhap that bai")
+                    android.util.Log.e("AuthViewModel", "Lỗi đăng nhập: ${error.message}", error)
+                    val msg = when (error) {
+                        is io.ktor.client.plugins.HttpRequestTimeoutException -> "Hết thời gian chờ. Vui lòng kiểm tra lại server Backend hoặc kết nối mạng."
+                        is java.net.ConnectException -> "Không thể kết nối tới server. Vui lòng kiểm tra lại server Backend."
+                        else -> error.message ?: "Đăng nhập thất bại"
+                    }
+                    _uiState.value = AuthUiState(errorMessage = msg)
                 }
         }
     }
@@ -56,7 +62,13 @@ class AuthViewModel : ViewModel() {
                     )
                 }
                 .onFailure { error ->
-                    _uiState.value = AuthUiState(errorMessage = error.message ?: "Dang ky that bai")
+                    android.util.Log.e("AuthViewModel", "Lỗi đăng ký: ${error.message}", error)
+                    val msg = when (error) {
+                        is io.ktor.client.plugins.HttpRequestTimeoutException -> "Hết thời gian chờ. Vui lòng kiểm tra lại server Backend hoặc kết nối mạng."
+                        is java.net.ConnectException -> "Không thể kết nối tới server. Vui lòng kiểm tra lại server Backend."
+                        else -> error.message ?: "Đăng ký thất bại"
+                    }
+                    _uiState.value = AuthUiState(errorMessage = msg)
                 }
         }
     }
