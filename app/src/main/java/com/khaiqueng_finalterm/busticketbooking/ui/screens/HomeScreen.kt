@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khaiqueng_finalterm.busticketbooking.data.repository.AuthSession
+import com.khaiqueng_finalterm.busticketbooking.data.repository.BookingRepository
 import com.khaiqueng_finalterm.busticketbooking.data.repository.BookingSession
 import com.khaiqueng_finalterm.busticketbooking.R
 import com.khaiqueng_finalterm.busticketbooking.ui.components.OSMapView
@@ -47,6 +49,7 @@ val DATES = listOf("07 Th04", "08 Th04", "09 Th04", "10 Th04", "11 Th04", "12 Th
 @Composable
 fun HomeScreen(
     onSearchClick: (String, String, String) -> Unit,
+    onChatClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -58,6 +61,15 @@ fun HomeScreen(
                 selectedIndex = selectedTabIndex,
                 onItemSelected = { selectedTabIndex = it }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onChatClick,
+                containerColor = PrimaryBlue,
+                contentColor = Color.White
+            ) {
+                Icon(Icons.Default.SupportAgent, contentDescription = "Trợ lý hỗ trợ")
+            }
         }
     ) { paddingValues ->
         when (selectedTabIndex) {
@@ -488,34 +500,150 @@ data class DestinationMapPoint(
 
 @Composable
 fun MyTicketsTab(modifier: Modifier = Modifier) {
-    val booking = BookingSession.lastBookingResponse
-    val trip = BookingSession.selectedTrip
-    val seats = BookingSession.selectedSeatNumbers.joinToString(", ").ifBlank { "Chưa có" }
+    val repository = remember { BookingRepository() }
+    val userId = AuthSession.user?.userId
+    var tickets by remember(userId) { mutableStateOf<List<com.khaiqueng_finalterm.busticketbooking.data.model.BookingResponseDTO>>(emptyList()) }
+    var isLoading by remember(userId) { mutableStateOf(true) }
+    var errorMessage by remember(userId) { mutableStateOf<String?>(null) }
+    var reloadKey by remember { mutableStateOf(0) }
 
-    Column(
+    LaunchedEffect(userId, reloadKey) {
+        if (userId == null) {
+            isLoading = false
+            errorMessage = "Bạn cần đăng nhập để xem vé."
+            return@LaunchedEffect
+        }
+
+        isLoading = true
+        errorMessage = null
+        repository.getBookingsForUser(userId)
+            .onSuccess { result ->
+                tickets = result
+                BookingSession.lastBookingResponse = result.firstOrNull()
+            }
+            .onFailure { exception ->
+                errorMessage = exception.message ?: "Không thể tải danh sách vé."
+            }
+        isLoading = false
+    }
+
+    LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        SectionHeader(
-            title = "Vé của tôi",
-            subtitle = "Thông tin vé gần nhất trong phiên hiện tại"
-        )
-
-        if (booking == null) {
-            EmptyStateCard(
-                icon = Icons.Default.ConfirmationNumber,
-                title = "Chưa có vé để hiển thị",
-                subtitle = "Sau khi đặt vé hoặc thanh toán thành công, thông tin vé sẽ xuất hiện tại đây."
+        item {
+            SectionHeader(
+                title = "Vé của tôi",
+                subtitle = "Danh sách vé đã đặt từ tài khoản hiện tại"
             )
-        } else {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-            ) {
+        }
+
+        when {
+            isLoading -> {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Đang tải vé...", color = Color.Gray, fontSize = 14.sp)
+                        }
+                    }
+                }
+            }
+
+            errorMessage != null -> {
+                item {
+                    EmptyStateCard(
+                        icon = Icons.Default.ErrorOutline,
+                        title = "Không thể tải danh sách vé",
+                        subtitle = errorMessage ?: "Vui lòng thử lại."
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { reloadKey++ },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Tải lại", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            tickets.isEmpty() -> {
+                item {
+                    EmptyStateCard(
+                        icon = Icons.Default.ConfirmationNumber,
+                        title = "Chưa có vé để hiển thị",
+                        subtitle = "Sau khi đặt vé hoặc thanh toán thành công, thông tin vé sẽ xuất hiện tại đây."
+                    )
+                }
+            }
+
+            else -> {
+                items(tickets, key = { it.id }) { booking ->
+                    val sessionSeats = BookingSession.selectedSeatNumbers.joinToString(", ")
+                    val seats = booking.seatNumbers.joinToString(", ")
+                        .ifBlank { sessionSeats.ifBlank { "Chưa có" } }
+                    val licensePlate = booking.licensePlate
+                        ?: BookingSession.selectedTrip?.bus?.licensePlate
+                        ?: "Đang cập nhật"
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "Mã vé #${booking.id}",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1F2937)
+                                )
+                                StatusPill(booking.status)
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            InfoRow("Tuyến", booking.tripRoute)
+                            InfoRow("Khởi hành", booking.departureTime.replace("T", " "))
+                            booking.arrivalTime?.let { InfoRow("Dự kiến đến", it.replace("T", " ")) }
+                            booking.duration?.let { InfoRow("Thời lượng", it) }
+                            InfoRow("Ghế", seats)
+                            InfoRow("Biển số xe", licensePlate)
+                            InfoRow("Tổng tiền", "%,.0fđ".format(booking.totalAmount), PrimaryBlue)
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
+            }
+        }
+    }
+}
+/*
                 Column(modifier = Modifier.padding(20.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -542,6 +670,7 @@ fun MyTicketsTab(modifier: Modifier = Modifier) {
     }
 }
 
+*/
 @Composable
 fun DestinationsTab(modifier: Modifier = Modifier) {
     val points = remember {

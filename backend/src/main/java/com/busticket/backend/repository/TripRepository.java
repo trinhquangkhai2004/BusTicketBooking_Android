@@ -22,4 +22,13 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    @Query("SELECT t FROM Trip t " +
+           "JOIN FETCH t.route r " +
+           "JOIN FETCH r.departureLocation " +
+           "JOIN FETCH r.arrivalLocation " +
+           "JOIN FETCH t.bus " +
+           "WHERE t.status = 'SCHEDULED' " +
+           "ORDER BY t.departureTime ASC")
+    List<Trip> findScheduledTripsForChatbot();
 }

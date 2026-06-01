@@ -11,6 +11,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.BusListScreen
+import com.khaiqueng_finalterm.busticketbooking.ui.screens.ChatbotScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.CheckoutScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.HomeScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.LoginScreen
@@ -58,12 +59,21 @@ fun AppNavigation() {
                 onSearchClick = { from, to, date ->
                     navController.navigate("busList/$from/$to/$date")
                 },
+                onChatClick = {
+                    navController.navigate("chatbot")
+                },
                 onLogoutClick = {
                     authViewModel.logout()
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable("chatbot") {
+            ChatbotScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
 
