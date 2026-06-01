@@ -1,13 +1,22 @@
 server:
-  port: 8080
+  port: ${BACKEND_PORT:8088}
+  error:
+    include-stacktrace: never
+    include-exception: false
+    include-message: always
 
 spring:
+  config:
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:file:../.env[.properties]"
+
   application:
     name: bus-ticket-backend
 
   # ===== MySQL =====
   datasource:
-    url: jdbc:mysql://localhost:3307/bus_ticket_booking?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3308/bus_ticket_booking?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
     username: ${MYSQL_USER:busticket}
     password: ${MYSQL_PASSWORD:busticket123}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -29,17 +38,22 @@ spring:
   data:
     redis:
       host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+      port: ${REDIS_PORT:6380}
       password: ${REDIS_PASSWORD:redis123}
       timeout: 5000
 
   # ===== RabbitMQ =====
   rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:}
     host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    port: ${RABBITMQ_PORT:5673}
     username: ${RABBITMQ_USER:busticket}
     password: ${RABBITMQ_PASSWORD:busticket123}
     virtual-host: /
+    listener:
+      simple:
+        missing-queues-fatal: false
+        failed-declaration-retry-interval: 10000
 
   # ===== Mail (cấu hình sau) =====
   mail:
@@ -58,8 +72,22 @@ spring:
 firebase:
   config-file: ${FIREBASE_CONFIG_FILE:firebase-service-account.json}
 
+# ===== VNPAY Sandbox =====
+vnpay:
+  payment-url: ${VNPAY_PAYMENT_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  return-url: ${VNPAY_RETURN_URL:http://10.0.2.2:8088/api/payments/vnpay-return}
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  hash-secret-key: ${VNPAY_HASH_SECRET_KEY:}
+  expire-minutes: ${VNPAY_EXPIRE_MINUTES:10}
+
 # ===== Actuator =====
 management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+    rabbit:
+      enabled: ${MANAGEMENT_HEALTH_RABBIT_ENABLED:false}
   endpoints:
     web:
       exposure:
@@ -74,3 +102,12 @@ logging:
     com.busticket: DEBUG
     org.springframework.data.redis: DEBUG
     org.hibernate.SQL: DEBUG
+
+app:
+  mail:
+    audit-bcc: ${MAIL_AUDIT_BCC:}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    generation-model: ${GEMINI_GENERATION_MODEL:gemini-2.5-flash}
+    embedding-model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+    top-k: ${RAG_TOP_K:3}
