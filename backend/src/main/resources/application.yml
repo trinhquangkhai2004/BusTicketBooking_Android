@@ -35,11 +35,16 @@ spring:
 
   # ===== RabbitMQ =====
   rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:}
     host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    port: ${RABBITMQ_PORT:5673}
     username: ${RABBITMQ_USER:busticket}
     password: ${RABBITMQ_PASSWORD:busticket123}
     virtual-host: /
+    listener:
+      simple:
+        missing-queues-fatal: false
+        failed-declaration-retry-interval: 10000
 
   # ===== Mail (cấu hình sau) =====
   mail:
@@ -60,6 +65,11 @@ firebase:
 
 # ===== Actuator =====
 management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+    rabbit:
+      enabled: ${MANAGEMENT_HEALTH_RABBIT_ENABLED:false}
   endpoints:
     web:
       exposure:
