@@ -25,5 +25,12 @@ object KtorClient {
                 ignoreUnknownKeys = true // Bỏ qua các field thừa từ Backend trả về
             })
         }
+
+        // Cấu hình Timeout để không bị treo vô hạn
+        install(io.ktor.client.plugins.HttpTimeout) {
+            requestTimeoutMillis = 15000L // 15 giây
+            connectTimeoutMillis = 15000L
+            socketTimeoutMillis = 15000L
+        }
     }
 }

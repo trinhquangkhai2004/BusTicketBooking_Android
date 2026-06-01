@@ -27,4 +27,9 @@ public class BookingController {
     public ResponseEntity<BookingResponseDTO> createBooking(@Valid @RequestBody BookingRequestDTO request) {
         return ResponseEntity.ok(bookingService.createBooking(request));
     }
+
+    @GetMapping("/users/{userId}/bookings")
+    public ResponseEntity<List<BookingResponseDTO>> getBookingsForUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(bookingService.getBookingsForUser(userId));
+    }
 }

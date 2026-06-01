@@ -35,6 +35,19 @@ public class Payment extends BaseEntity {
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @Column(unique = true)
+    private String gatewayTxnRef;
+
+    private String gatewayTransactionNo;
+
+    private String responseCode;
+
+    private String transactionStatus;
+
+    private String bankCode;
+
+    private String cardType;
+
     public enum PaymentMethod {
         VNPAY, CASH, CREDIT_CARD
     }

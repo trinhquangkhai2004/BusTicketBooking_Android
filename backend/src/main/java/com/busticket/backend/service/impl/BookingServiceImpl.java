@@ -14,11 +14,13 @@ import com.busticket.backend.repository.SeatRepository;
 import com.busticket.backend.repository.TripRepository;
 import com.busticket.backend.repository.UserRepository;
 import com.busticket.backend.service.BookingService;
-import lombok.RequiredArgsConstructor;
+import com.busticket.backend.service.EmailNotificationProducer;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -28,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
@@ -36,9 +37,26 @@ public class BookingServiceImpl implements BookingService {
     private final SeatRepository seatRepository;
     private final UserRepository userRepository;
     private final RedissonClient redissonClient;
+    private final TransactionTemplate transactionTemplate;
+    private final EmailNotificationProducer emailNotificationProducer;
+
+    public BookingServiceImpl(BookingRepository bookingRepository,
+                              TripRepository tripRepository,
+                              SeatRepository seatRepository,
+                              UserRepository userRepository,
+                              RedissonClient redissonClient,
+                              PlatformTransactionManager transactionManager,
+                              EmailNotificationProducer emailNotificationProducer) {
+        this.bookingRepository = bookingRepository;
+        this.tripRepository = tripRepository;
+        this.seatRepository = seatRepository;
+        this.userRepository = userRepository;
+        this.redissonClient = redissonClient;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
+        this.emailNotificationProducer = emailNotificationProducer;
+    }
 
     @Override
-    @Transactional
     public BookingResponseDTO createBooking(BookingRequestDTO request) {
         Trip trip = tripRepository.findById(request.getTripId())
                 .orElseThrow(() -> new ResourceNotFoundException("Trip not found"));
@@ -54,49 +72,55 @@ public class BookingServiceImpl implements BookingService {
         RLock multiLock = redissonClient.getMultiLock(locks.toArray(new RLock[0]));
 
         try {
-            boolean isLocked = multiLock.tryLock(5, 10, TimeUnit.SECONDS);
+            // Sử dụng Redisson Watchdog bằng cách loại bỏ tham số leaseTime (chỉ truyền waitTime = 5 giây)
+            boolean isLocked = multiLock.tryLock(5, TimeUnit.SECONDS);
             if (!isLocked) {
                 throw new BusinessException("Ghế đang được người khác chọn. Vui lòng thử lại!");
             }
 
-            List<Seat> selectedSeats = seatRepository.findAllById(request.getSeatIds());
-            if (selectedSeats.size() != request.getSeatIds().size()) {
-                throw new BusinessException("ID ghế không hợp lệ.");
-            }
-
-            List<Booking> existingBookings = bookingRepository.findByTripId(trip.getId());
-            Set<Long> alreadyBookedSeatIds = existingBookings.stream()
-                    .filter(b -> b.getStatus() != Booking.BookingStatus.CANCELLED)
-                    .flatMap(b -> b.getSeats().stream())
-                    .map(Seat::getId)
-                    .collect(Collectors.toSet());
-
-            for (Long seatId : request.getSeatIds()) {
-                if (alreadyBookedSeatIds.contains(seatId)) {
-                    throw new BusinessException("Ghế " + seatId + " đã được đặt.");
+            // Thực thi toàn bộ các thao tác database trong Transaction nội bộ của Lock
+            return transactionTemplate.execute(status -> {
+                List<Seat> selectedSeats = seatRepository.findAllById(request.getSeatIds());
+                if (selectedSeats.size() != request.getSeatIds().size()) {
+                    throw new BusinessException("ID ghế không hợp lệ.");
                 }
-            }
 
-            BigDecimal totalAmount = trip.getPrice().multiply(new BigDecimal(selectedSeats.size()));
+                List<Booking> existingBookings = bookingRepository.findByTripId(trip.getId());
+                Set<Long> alreadyBookedSeatIds = existingBookings.stream()
+                        .filter(b -> b.getStatus() != Booking.BookingStatus.CANCELLED)
+                        .flatMap(b -> b.getSeats().stream())
+                        .map(Seat::getId)
+                        .collect(Collectors.toSet());
 
-            Booking booking = Booking.builder()
-                    .user(user)
-                    .trip(trip)
-                    .seats(Set.copyOf(selectedSeats))
-                    .totalAmount(totalAmount)
-                    .status(Booking.BookingStatus.PENDING)
-                    .build();
+                for (Long seatId : request.getSeatIds()) {
+                    if (alreadyBookedSeatIds.contains(seatId)) {
+                        throw new BusinessException("Ghế " + seatId + " đã được đặt.");
+                    }
+                }
 
-            booking = bookingRepository.save(booking);
+                BigDecimal extraServicesAmount = request.getExtraServicesAmount() == null
+                        ? BigDecimal.ZERO
+                        : request.getExtraServicesAmount();
+                BigDecimal totalAmount = trip.getPrice()
+                        .multiply(new BigDecimal(selectedSeats.size()))
+                        .add(extraServicesAmount);
 
-            BookingResponseDTO response = new BookingResponseDTO();
-            response.setId(booking.getId());
-            response.setTripRoute(trip.getRoute().getDepartureLocation().getName() + " -> " + trip.getRoute().getArrivalLocation().getName());
-            response.setDepartureTime(trip.getDepartureTime());
-            response.setTotalAmount(totalAmount);
-            response.setStatus(booking.getStatus().name());
+                Booking booking = Booking.builder()
+                        .user(user)
+                        .trip(trip)
+                        .seats(Set.copyOf(selectedSeats))
+                        .totalAmount(totalAmount)
+                        .status(Booking.BookingStatus.PENDING)
+                        .build();
 
-            return response;
+                booking = bookingRepository.save(booking);
+
+                BookingResponseDTO response = toBookingResponse(booking);
+
+                emailNotificationProducer.publishBookingCreatedEmail(booking);
+
+                return response;
+            });
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -106,6 +130,19 @@ public class BookingServiceImpl implements BookingService {
                 multiLock.unlock();
             }
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingResponseDTO> getBookingsForUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        return bookingRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(this::toBookingResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -129,5 +166,27 @@ public class BookingServiceImpl implements BookingService {
             dto.setIsBooked(bookedSeatIds.contains(seat.getId()));
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    private BookingResponseDTO toBookingResponse(Booking booking) {
+        Trip trip = booking.getTrip();
+
+        BookingResponseDTO response = new BookingResponseDTO();
+        response.setId(booking.getId());
+        response.setTripRoute(trip.getRoute().getDepartureLocation().getName()
+                + " -> "
+                + trip.getRoute().getArrivalLocation().getName());
+        response.setDepartureTime(trip.getDepartureTime());
+        response.setArrivalTime(trip.getArrivalTime());
+        response.setDuration(trip.getRoute().getDuration());
+        response.setLicensePlate(trip.getBus().getLicensePlate());
+        response.setSeatNumbers(booking.getSeats().stream()
+                .map(Seat::getSeatNumber)
+                .sorted()
+                .collect(Collectors.toList()));
+        response.setTotalAmount(booking.getTotalAmount());
+        response.setStatus(booking.getStatus().name());
+        response.setCreatedAt(booking.getCreatedAt());
+        return response;
     }
 }

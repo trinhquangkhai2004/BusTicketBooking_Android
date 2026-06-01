@@ -66,7 +66,12 @@ fun RegisterScreen(
                 unfocusedBorderColor = Color.White,
                 focusedBorderColor = PrimaryBlue,
                 unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White
+                focusedContainerColor = Color.White,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                cursorColor = PrimaryBlue,
+                focusedLabelColor = PrimaryBlue,
+                unfocusedLabelColor = Color.Gray
             ),
             singleLine = true
         )
@@ -84,7 +89,12 @@ fun RegisterScreen(
                 unfocusedBorderColor = Color.White,
                 focusedBorderColor = PrimaryBlue,
                 unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White
+                focusedContainerColor = Color.White,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                cursorColor = PrimaryBlue,
+                focusedLabelColor = PrimaryBlue,
+                unfocusedLabelColor = Color.Gray
             ),
             singleLine = true
         )
@@ -103,7 +113,12 @@ fun RegisterScreen(
                 unfocusedBorderColor = Color.White,
                 focusedBorderColor = PrimaryBlue,
                 unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White
+                focusedContainerColor = Color.White,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                cursorColor = PrimaryBlue,
+                focusedLabelColor = PrimaryBlue,
+                unfocusedLabelColor = Color.Gray
             ),
             singleLine = true
         )

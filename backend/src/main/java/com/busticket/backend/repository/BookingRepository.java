@@ -12,6 +12,7 @@ import java.util.List;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserId(Long userId);
+    List<Booking> findByUserIdOrderByCreatedAtDesc(Long userId);
     List<Booking> findByTripId(Long tripId);
 
     @Query("SELECT b FROM Booking b WHERE b.status = 'PENDING' AND b.createdAt < :timeLimit")

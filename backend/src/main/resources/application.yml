@@ -6,6 +6,11 @@ server:
     include-message: always
 
 spring:
+  config:
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:file:../.env[.properties]"
+
   application:
     name: bus-ticket-backend
 
@@ -39,11 +44,16 @@ spring:
 
   # ===== RabbitMQ =====
   rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES:}
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5673}
     username: ${RABBITMQ_USER:busticket}
     password: ${RABBITMQ_PASSWORD:busticket123}
     virtual-host: /
+    listener:
+      simple:
+        missing-queues-fatal: false
+        failed-declaration-retry-interval: 10000
 
   # ===== Mail (cấu hình sau) =====
   mail:
@@ -62,8 +72,22 @@ spring:
 firebase:
   config-file: ${FIREBASE_CONFIG_FILE:firebase-service-account.json}
 
+# ===== VNPAY Sandbox =====
+vnpay:
+  payment-url: ${VNPAY_PAYMENT_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  return-url: ${VNPAY_RETURN_URL:http://10.0.2.2:8088/api/payments/vnpay-return}
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  hash-secret-key: ${VNPAY_HASH_SECRET_KEY:}
+  expire-minutes: ${VNPAY_EXPIRE_MINUTES:10}
+
 # ===== Actuator =====
 management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+    rabbit:
+      enabled: ${MANAGEMENT_HEALTH_RABBIT_ENABLED:false}
   endpoints:
     web:
       exposure:
@@ -78,3 +102,7 @@ logging:
     com.busticket: DEBUG
     org.springframework.data.redis: DEBUG
     org.hibernate.SQL: DEBUG
+
+app:
+  mail:
+    audit-bcc: ${MAIL_AUDIT_BCC:}

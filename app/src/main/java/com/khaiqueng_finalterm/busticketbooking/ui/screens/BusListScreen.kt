@@ -23,12 +23,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khaiqueng_finalterm.busticketbooking.ui.components.BusTicketCard
 import com.khaiqueng_finalterm.busticketbooking.ui.theme.PrimaryBlue
+import com.khaiqueng_finalterm.busticketbooking.data.repository.BookingSession
 
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.BusListViewModel
 import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.BusListUiState
+import androidx.compose.foundation.BorderStroke
 import java.text.NumberFormat
 import java.util.Locale
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
 
 // ---------------------------------------------------------------------------
 // BusListScreen
@@ -145,19 +149,75 @@ fun BusListScreen(
                 }
                 is BusListUiState.Success -> {
                     if (state.trips.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 32.dp, vertical = 40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("😔", fontSize = 48.sp)
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "Không có chuyến xe\n$fromLocation → $toLocation",
-                                    fontSize = 16.sp,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center
-                                )
+                            // Apology message
+                            Text(
+                                text =
+                                    buildAnnotatedString {
+                                    append("Xin lỗi bạn vì sự bất tiện này. BusGo sẽ cập nhật ngay khi có thông tin xe hoạt động trên tuyến đường ")
+                                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, color = Color(0xFF1F2937)))
+                                    append("$fromLocation đi $toLocation")
+                                    pop()
+                                    append(" ngày ")
+                                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, color = Color(0xFF1F2937)))
+                                    append(currentDate)
+                                    pop()
+                                },
+                                fontSize = 16.sp,
+                                color = Color(0xFF374151),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 26.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Subtitle
+                            Text(
+                                text = "Nếu bạn có thể linh hoạt thời gian, tham khảo các chuyến xe khác vào các ngày sau",
+                                fontSize = 13.sp,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center,
+                                lineHeight = 20.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            // Suggested alternative dates (next 3 dates from list)
+                            val currentIndex = DATES.indexOf(currentDate)
+                            val suggestedDates = if (currentIndex >= 0)
+                                DATES.drop(currentIndex + 1).take(3)
+                            else
+                                DATES.take(3)
+
+                            if (suggestedDates.isNotEmpty()) {
+                                androidx.compose.foundation.lazy.LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 4.dp)
+                                ) {
+                                    items(suggestedDates) { date ->
+                                        OutlinedButton(
+                                            onClick = { currentDate = date },
+                                            shape = RoundedCornerShape(8.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryBlue),
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                contentColor = PrimaryBlue
+                                            )
+                                        ) {
+                                            Text(
+                                                text = date,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = PrimaryBlue,
+                                                maxLines = 1
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else {
@@ -176,16 +236,36 @@ fun BusListScreen(
                                                  else if (trip.availableSeats > 0) "Chỉ còn ${trip.availableSeats} chỗ" 
                                                  else "Đã hết chỗ"
 
+                                // Tính thời gian hành trình động từ departureTime & arrivalTime
+                                val calculatedDuration = try {
+                                    val sdf = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault())
+                                    val depDate = sdf.parse(trip.departureTime)
+                                    val arrDate = sdf.parse(trip.arrivalTime)
+                                    if (depDate != null && arrDate != null) {
+                                        val diffMs = arrDate.time - depDate.time
+                                        val totalMinutes = (diffMs / 60000).toInt()
+                                        val hours = totalMinutes / 60
+                                        val minutes = totalMinutes % 60
+                                        if (minutes == 0) "${hours}h" else "${hours}h ${minutes}m"
+                                    } else trip.duration
+                                } catch (e: Exception) {
+                                    trip.duration // fallback về DB nếu parse lỗi
+                                }
+
                                 BusTicketCard(
                                     departureTime = depTimeStr,
                                     arrivalTime = arrTimeStr,
                                     departureLocation = trip.departureLocation.name,
                                     arrivalLocation = trip.arrivalLocation.name,
-                                    duration = trip.duration,
+                                    duration = calculatedDuration,
                                     busType = trip.bus.type,
                                     statusText = statusText,
                                     price = formatCurrency.format(trip.price),
-                                    onClick = onBusClick
+                                    onClick = {
+                                        BookingSession.clear()
+                                        BookingSession.selectedTrip = trip
+                                        onBusClick()
+                                    }
                                 )
                             }
                         }

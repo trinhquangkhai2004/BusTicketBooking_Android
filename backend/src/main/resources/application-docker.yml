@@ -23,6 +23,21 @@ spring:
       ddl-auto: update
     show-sql: false
 
+vnpay:
+  payment-url: ${VNPAY_PAYMENT_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+  return-url: ${VNPAY_RETURN_URL:http://10.0.2.2:8088/api/payments/vnpay-return}
+  tmn-code: ${VNPAY_TMN_CODE:}
+  hash-secret: ${VNPAY_HASH_SECRET:}
+  hash-secret-key: ${VNPAY_HASH_SECRET_KEY:}
+  expire-minutes: ${VNPAY_EXPIRE_MINUTES:10}
+
+management:
+  health:
+    mail:
+      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
+    rabbit:
+      enabled: ${MANAGEMENT_HEALTH_RABBIT_ENABLED:false}
+
 logging:
   level:
     com.busticket: INFO

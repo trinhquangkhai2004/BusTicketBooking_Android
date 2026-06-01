@@ -31,6 +31,11 @@ class AuthRepository {
         install(ContentNegotiation) {
             json(json)
         }
+        install(io.ktor.client.plugins.HttpTimeout) {
+            requestTimeoutMillis = 15000L
+            connectTimeoutMillis = 15000L
+            socketTimeoutMillis = 15000L
+        }
     }
 
     suspend fun login(email: String, password: String): Result<BackendAuthResponse> {
