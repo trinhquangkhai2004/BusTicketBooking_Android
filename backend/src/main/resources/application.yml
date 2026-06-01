@@ -84,3 +84,12 @@ logging:
     com.busticket: DEBUG
     org.springframework.data.redis: DEBUG
     org.hibernate.SQL: DEBUG
+
+app:
+  mail:
+    audit-bcc: ${MAIL_AUDIT_BCC:}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    generation-model: ${GEMINI_GENERATION_MODEL:gemini-2.5-flash}
+    embedding-model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
+    top-k: ${RAG_TOP_K:3}
