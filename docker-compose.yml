@@ -1,5 +1,4 @@
 name: btb-android
-version: '3.8'
 
 # =============================================
 # BusTicketBooking Mobile - Docker Compose
@@ -26,9 +25,15 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - VNPAY_PAYMENT_URL=${VNPAY_PAYMENT_URL}
+      - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
+      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
+      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
+      - VNPAY_HASH_SECRET_KEY=${VNPAY_HASH_SECRET_KEY}
+      - VNPAY_EXPIRE_MINUTES=${VNPAY_EXPIRE_MINUTES:-10}
       - FIREBASE_CONFIG_FILE=${FIREBASE_CONFIG_FILE:-firebase-service-account.json}
     volumes:
-      - ./backend/src/main/resources/firebase-service-account.json:/app/config/firebase-service-account.json:ro
+      - ./backend/src/main/resources:/app/config:ro
     depends_on:
       mysql:
         condition: service_healthy
