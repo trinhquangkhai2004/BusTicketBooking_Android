@@ -37,7 +37,3 @@ docker/redis/data/
 *.ipr
 *.iws
 .vscode/
-
-
-.gradle-user-home/
-.kotlin/

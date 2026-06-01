@@ -17,12 +17,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.khaiqueng_finalterm.busticketbooking.ui.theme.PrimaryBlue
-import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.AuthUiState
 
 @Composable
 fun RegisterScreen(
-    uiState: AuthUiState,
-    onRegisterClick: (String, String, String) -> Unit,
+    onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
     var fullName by remember { mutableStateOf(TextFieldValue("")) }
@@ -66,12 +64,7 @@ fun RegisterScreen(
                 unfocusedBorderColor = Color.White,
                 focusedBorderColor = PrimaryBlue,
                 unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                cursorColor = PrimaryBlue,
-                focusedLabelColor = PrimaryBlue,
-                unfocusedLabelColor = Color.Gray
+                focusedContainerColor = Color.White
             ),
             singleLine = true
         )
@@ -89,12 +82,7 @@ fun RegisterScreen(
                 unfocusedBorderColor = Color.White,
                 focusedBorderColor = PrimaryBlue,
                 unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                cursorColor = PrimaryBlue,
-                focusedLabelColor = PrimaryBlue,
-                unfocusedLabelColor = Color.Gray
+                focusedContainerColor = Color.White
             ),
             singleLine = true
         )
@@ -113,56 +101,22 @@ fun RegisterScreen(
                 unfocusedBorderColor = Color.White,
                 focusedBorderColor = PrimaryBlue,
                 unfocusedContainerColor = Color.White,
-                focusedContainerColor = Color.White,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                cursorColor = PrimaryBlue,
-                focusedLabelColor = PrimaryBlue,
-                unfocusedLabelColor = Color.Gray
+                focusedContainerColor = Color.White
             ),
             singleLine = true
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        uiState.errorMessage?.let { message ->
-            Text(
-                text = message,
-                color = MaterialTheme.colorScheme.error,
-                fontSize = 14.sp,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        uiState.successMessage?.let { message ->
-            Text(
-                text = message,
-                color = Color(0xFF15803D),
-                fontSize = 14.sp,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
         Button(
-            onClick = { onRegisterClick(fullName.text, email.text, password.text) },
-            enabled = !uiState.isLoading,
+            onClick = onRegisterSuccess,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
             shape = RoundedCornerShape(16.dp)
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    color = Color.White,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text("Đăng ký", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            }
+            Text("Đăng ký", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -178,7 +132,7 @@ fun RegisterScreen(
                 color = PrimaryBlue,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                modifier = Modifier.clickable(enabled = !uiState.isLoading) { onNavigateToLogin() }
+                modifier = Modifier.clickable { onNavigateToLogin() }
             )
         }
     }

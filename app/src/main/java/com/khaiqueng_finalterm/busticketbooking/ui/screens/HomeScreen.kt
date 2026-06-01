@@ -6,10 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -24,11 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.khaiqueng_finalterm.busticketbooking.data.repository.AuthSession
-import com.khaiqueng_finalterm.busticketbooking.data.repository.BookingRepository
-import com.khaiqueng_finalterm.busticketbooking.data.repository.BookingSession
 import com.khaiqueng_finalterm.busticketbooking.R
-import com.khaiqueng_finalterm.busticketbooking.ui.components.OSMapView
 import com.khaiqueng_finalterm.busticketbooking.ui.theme.PrimaryBlue
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.ImeAction
@@ -37,68 +31,41 @@ import androidx.compose.foundation.text.KeyboardOptions
 import java.text.SimpleDateFormat
 import java.util.*
 
-
+// ---------------------------------------------------------------------------
 // Data
-
+// ---------------------------------------------------------------------------
 val LOCATIONS = listOf("Đà Nẵng", "Huế", "Hội An", "Quy Nhơn", "Quảng Ngãi", "Tam Kỳ")
 val DATES = listOf("07 Th04", "08 Th04", "09 Th04", "10 Th04", "11 Th04", "12 Th04", "13 Th04")
 
+// ---------------------------------------------------------------------------
 // 1. Core Home Screen Orchestrator
-
+// ---------------------------------------------------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onSearchClick: (String, String, String) -> Unit,
-    onChatClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
-    var selectedTabIndex by remember { mutableStateOf(0) }
-
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
-        bottomBar = {
-            StandardBottomNavigationBar(
-                selectedIndex = selectedTabIndex,
-                onItemSelected = { selectedTabIndex = it }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onChatClick,
-                containerColor = PrimaryBlue,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.SupportAgent, contentDescription = "Trợ lý hỗ trợ")
-            }
-        }
+        bottomBar = { FloatingBottomNavigationBar(onLogoutClick = onLogoutClick) }
     ) { paddingValues ->
-        when (selectedTabIndex) {
-            0 -> {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    item { HeroAndSearchSection(onSearchClick = onSearchClick) }
-                    item { TrustBadgesSection() }
-                    item { PopularRoutesSection() }
-                    item { Spacer(modifier = Modifier.height(100.dp)) }
-                }
-            }
-            1 -> MyTicketsTab(modifier = Modifier.padding(paddingValues))
-            2 -> DestinationsTab(modifier = Modifier.padding(paddingValues))
-            3 -> AccountTab(
-                modifier = Modifier.padding(paddingValues),
-                onLogoutClick = onLogoutClick
-            )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            item { HeroAndSearchSection(onSearchClick = onSearchClick) }
+            item { PopularRoutesSection() }
+            item { Spacer(modifier = Modifier.height(100.dp)) }
         }
     }
 }
 
-
+// ---------------------------------------------------------------------------
 // 2. Hero Image and Overlapping Search Card
-
+// ---------------------------------------------------------------------------
 @Composable
 fun HeroAndSearchSection(onSearchClick: (String, String, String) -> Unit) {
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -109,7 +76,7 @@ fun HeroAndSearchSection(onSearchClick: (String, String, String) -> Unit) {
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Image(
-                    painter = painterResource(id = R.drawable.bus),
+                    painter = painterResource(id = R.drawable.bus_hero),
                     contentDescription = "Xe khách",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
@@ -119,12 +86,8 @@ fun HeroAndSearchSection(onSearchClick: (String, String, String) -> Unit) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(
-                            brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
-                            ),
-                            shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
-                        )
+                        .background(Color.Black.copy(alpha = 0.2f))
+                        .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp))
                 )
                 HomeHeaderOverlay()
             }
@@ -141,21 +104,13 @@ fun HeroAndSearchSection(onSearchClick: (String, String, String) -> Unit) {
     }
 }
 
+// ---------------------------------------------------------------------------
 // 3. Header Overlay
-
+// ---------------------------------------------------------------------------
 @Composable
 fun HomeHeaderOverlay() {
     var locationExpanded by remember { mutableStateOf(false) }
     var currentLocation by remember { mutableStateOf("Đà Nẵng, Việt Nam") }
-
-    val greeting = remember {
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        when (hour) {
-            in 5..11 -> "Chào buổi sáng! ☀️"
-            in 12..17 -> "Chào buổi chiều! 🌤️"
-            else -> "Chào buổi tối! 🌙"
-        }
-    }
 
     Row(
         modifier = Modifier
@@ -165,7 +120,7 @@ fun HomeHeaderOverlay() {
         verticalAlignment = Alignment.Top
     ) {
         Column {
-            Text(text = greeting, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(text = "Xin chào!", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White)
             Spacer(modifier = Modifier.height(4.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -201,9 +156,9 @@ fun HomeHeaderOverlay() {
     }
 }
 
-
+// ---------------------------------------------------------------------------
 // 4. Advanced Search Card with TextField + Calendar Date Picker
-
+// ---------------------------------------------------------------------------
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
@@ -249,9 +204,8 @@ fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp), ambientColor = PrimaryBlue.copy(alpha = 0.1f), spotColor = PrimaryBlue.copy(alpha = 0.1f))
-            .border(1.5.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(24.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f)),
+            .shadow(elevation = 16.dp, shape = RoundedCornerShape(24.dp), ambientColor = PrimaryBlue.copy(alpha = 0.1f), spotColor = PrimaryBlue.copy(alpha = 0.1f)),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(24.dp)
     ) {
         Column(modifier = Modifier.padding(24.dp)) {
@@ -259,7 +213,7 @@ fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth().padding(end = 52.dp)) {
                     // FROM text field
-                    Text("Nơi xuất phát", fontSize = 12.sp, color = Color.Gray)
+                    Text("Điểm đi", fontSize = 12.sp, color = Color.Gray)
                     Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = fromLocation,
@@ -269,15 +223,15 @@ fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            autoCorrect = false,
                             imeAction = ImeAction.Next
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color(0xFFE5E7EB).copy(alpha = 0.5f),
+                            unfocusedBorderColor = Color(0xFFE5E7EB),
                             focusedBorderColor = PrimaryBlue,
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.5f),
-                            focusedContainerColor = Color.White.copy(alpha = 0.9f),
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black
+                            unfocusedContainerColor = Color(0xFFF9FAFB),
+                            focusedContainerColor = Color.White
                         ),
                         singleLine = true
                     )
@@ -285,7 +239,7 @@ fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // TO text field
-                    Text("Nơi đến", fontSize = 12.sp, color = Color.Gray)
+                    Text("Điểm đến", fontSize = 12.sp, color = Color.Gray)
                     Spacer(modifier = Modifier.height(4.dp))
                     OutlinedTextField(
                         value = toLocation,
@@ -295,15 +249,15 @@ fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Words,
+                            autoCorrect = false,
                             imeAction = ImeAction.Done
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            unfocusedBorderColor = Color(0xFFE5E7EB).copy(alpha = 0.5f),
+                            unfocusedBorderColor = Color(0xFFE5E7EB),
                             focusedBorderColor = PrimaryBlue,
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.5f),
-                            focusedContainerColor = Color.White.copy(alpha = 0.9f),
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black
+                            unfocusedContainerColor = Color(0xFFF9FAFB),
+                            focusedContainerColor = Color.White
                         ),
                         singleLine = true
                     )
@@ -347,7 +301,7 @@ fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
                 Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = { onSearchClick(fromLocation.text, toLocation.text, selectedDateLabel) },
@@ -357,7 +311,7 @@ fun AdvancedSearchCard(onSearchClick: (String, String, String) -> Unit) {
             ) {
                 Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Tìm kiếm", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Tìm chuyến xe", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -394,580 +348,149 @@ fun LocationDropdownField(
     }
 }
 
-
-@Composable
-fun TrustBadgesSection() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp, horizontal = 24.dp)
-            .background(Color(0xFF1E3A8A), RoundedCornerShape(12.dp))
-            .padding(vertical = 12.dp, horizontal = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        TrustBadgeItem(Icons.Default.VerifiedUser, "chắc chắn có chỗ")
-        TrustBadgeItem(Icons.Default.HeadsetMic, "Hỗ trợ 24/7")
-        TrustBadgeItem(Icons.Default.LocalOffer, "Nhiều ưu đãi")
-    }
-}
-
-@Composable
-fun TrustBadgeItem(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(imageVector = icon, contentDescription = null, tint = Color(0xFFFACC15), modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(text = text, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Medium)
-    }
-}
-
-data class RouteDestination(val name: String, val price: String, val imageRes: Int)
-
+// ---------------------------------------------------------------------------
+// 5. Popular Routes Section
+// ---------------------------------------------------------------------------
 @Composable
 fun PopularRoutesSection() {
-    val routes = listOf(
-        RouteDestination("Hội An - Huế", "Từ 270.000đ", R.drawable.hue),
-        RouteDestination("Hội An - Đà Nẵng", "Từ 120.000đ", R.drawable.danang),
-        RouteDestination("Huế - Quy Nhơn", "Từ 249.000đ", R.drawable.quynhon)
-    )
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 16.dp)
+            .padding(horizontal = 24.dp, vertical = 32.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "Tuyến đường phổ biến", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
+            Text(text = "Xem tất cả", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.clickable { })
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        androidx.compose.foundation.lazy.LazyRow(
-            contentPadding = PaddingValues(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        Card(
+            modifier = Modifier.fillMaxWidth().height(180.dp),
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            items(routes.size) { index ->
-                val route = routes[index]
-                Card(
-                    modifier = Modifier.width(200.dp).height(140.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Image(
-                            painter = painterResource(id = route.imageRes),
-                            contentDescription = route.name,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp)
-                                .align(Alignment.BottomCenter)
-                                .background(
-                                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
-                                    )
-                                )
-                        )
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomStart)
-                                .padding(12.dp)
-                        ) {
-                            Text(text = route.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(text = route.price, fontSize = 12.sp, color = Color.White.copy(alpha = 0.9f))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-data class DestinationMapPoint(
-    val name: String,
-    val description: String,
-    val latitude: Double,
-    val longitude: Double
-)
-
-@Composable
-fun MyTicketsTab(modifier: Modifier = Modifier) {
-    val repository = remember { BookingRepository() }
-    val userId = AuthSession.user?.userId
-    var tickets by remember(userId) { mutableStateOf<List<com.khaiqueng_finalterm.busticketbooking.data.model.BookingResponseDTO>>(emptyList()) }
-    var isLoading by remember(userId) { mutableStateOf(true) }
-    var errorMessage by remember(userId) { mutableStateOf<String?>(null) }
-    var reloadKey by remember { mutableStateOf(0) }
-
-    LaunchedEffect(userId, reloadKey) {
-        if (userId == null) {
-            isLoading = false
-            errorMessage = "Bạn cần đăng nhập để xem vé."
-            return@LaunchedEffect
-        }
-
-        isLoading = true
-        errorMessage = null
-        repository.getBookingsForUser(userId)
-            .onSuccess { result ->
-                tickets = result
-                BookingSession.lastBookingResponse = result.firstOrNull()
-            }
-            .onFailure { exception ->
-                errorMessage = exception.message ?: "Không thể tải danh sách vé."
-            }
-        isLoading = false
-    }
-
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            SectionHeader(
-                title = "Vé của tôi",
-                subtitle = "Danh sách vé đã đặt từ tài khoản hiện tại"
-            )
-        }
-
-        when {
-            isLoading -> {
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("Đang tải vé...", color = Color.Gray, fontSize = 14.sp)
-                        }
-                    }
-                }
-            }
-
-            errorMessage != null -> {
-                item {
-                    EmptyStateCard(
-                        icon = Icons.Default.ErrorOutline,
-                        title = "Không thể tải danh sách vé",
-                        subtitle = errorMessage ?: "Vui lòng thử lại."
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(
-                        onClick = { reloadKey++ },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                    ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, tint = Color.White)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Tải lại", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            tickets.isEmpty() -> {
-                item {
-                    EmptyStateCard(
-                        icon = Icons.Default.ConfirmationNumber,
-                        title = "Chưa có vé để hiển thị",
-                        subtitle = "Sau khi đặt vé hoặc thanh toán thành công, thông tin vé sẽ xuất hiện tại đây."
-                    )
-                }
-            }
-
-            else -> {
-                items(tickets, key = { it.id }) { booking ->
-                    val sessionSeats = BookingSession.selectedSeatNumbers.joinToString(", ")
-                    val seats = booking.seatNumbers.joinToString(", ")
-                        .ifBlank { sessionSeats.ifBlank { "Chưa có" } }
-                    val licensePlate = booking.licensePlate
-                        ?: BookingSession.selectedTrip?.bus?.licensePlate
-                        ?: "Đang cập nhật"
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    "Mã vé #${booking.id}",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1F2937)
-                                )
-                                StatusPill(booking.status)
-                            }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            InfoRow("Tuyến", booking.tripRoute)
-                            InfoRow("Khởi hành", booking.departureTime.replace("T", " "))
-                            booking.arrivalTime?.let { InfoRow("Dự kiến đến", it.replace("T", " ")) }
-                            booking.duration?.let { InfoRow("Thời lượng", it) }
-                            InfoRow("Ghế", seats)
-                            InfoRow("Biển số xe", licensePlate)
-                            InfoRow("Tổng tiền", "%,.0fđ".format(booking.totalAmount), PrimaryBlue)
-                        }
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
-                }
-            }
-        }
-    }
-}
-/*
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Mã vé #${booking.id}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1F2937)
-                        )
-                        StatusPill(booking.status)
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    InfoRow("Tuyến", booking.tripRoute)
-                    InfoRow("Khởi hành", booking.departureTime.replace("T", " "))
-                    InfoRow("Ghế", seats)
-                    InfoRow("Biển số xe", trip?.bus?.licensePlate ?: "Đang cập nhật")
-                    InfoRow("Tổng tiền", "%,.0fđ".format(booking.totalAmount), PrimaryBlue)
-                }
-            }
-        }
-    }
-}
-
-*/
-@Composable
-fun DestinationsTab(modifier: Modifier = Modifier) {
-    val points = remember {
-        listOf(
-            DestinationMapPoint("Đà Nẵng", "Trung tâm du lịch ven biển miền Trung", 16.047079, 108.206230),
-            DestinationMapPoint("Huế", "Cố đô với nhiều điểm tham quan lịch sử", 16.463713, 107.590866),
-            DestinationMapPoint("Hội An", "Phố cổ, ẩm thực và trải nghiệm văn hóa", 15.880058, 108.338047),
-            DestinationMapPoint("Quy Nhơn", "Biển xanh và các tuyến du lịch nghỉ dưỡng", 13.782967, 109.219663)
-        )
-    }
-    var selectedPoint by remember { mutableStateOf(points.first()) }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        SectionHeader(
-            title = "Điểm đến",
-            subtitle = "Bản đồ tương tác dùng dữ liệu OpenStreetMap"
-        )
-
-        androidx.compose.foundation.lazy.LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(points.size) { index ->
-                val point = points[index]
-                FilterChip(
-                    selected = point == selectedPoint,
-                    onClick = { selectedPoint = point },
-                    label = { Text(point.name) },
-                    leadingIcon = if (point == selectedPoint) {
-                        { Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    } else null,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = PrimaryBlue.copy(alpha = 0.14f),
-                        selectedLabelColor = PrimaryBlue
-                    )
+            Box(modifier = Modifier.fillMaxSize()) {
+                Image(
+                    painter = painterResource(id = R.drawable.map_placeholder),
+                    contentDescription = "Bản đồ tuyến đường",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = "Ghim",
+                    tint = PrimaryBlue,
+                    modifier = Modifier.align(Alignment.Center).size(48.dp).shadow(4.dp, CircleShape, clip = false)
                 )
             }
         }
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(360.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            OSMapView(
-                modifier = Modifier.fillMaxSize(),
-                latitude = selectedPoint.latitude,
-                longitude = selectedPoint.longitude,
-                zoomLevel = 13.0,
-                markerTitle = selectedPoint.name
-            )
-        }
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Text(selectedPoint.name, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(selectedPoint.description, fontSize = 14.sp, color = Color.Gray)
-            }
-        }
     }
 }
 
-@Composable
-fun AccountTab(
-    modifier: Modifier = Modifier,
-    onLogoutClick: () -> Unit
-) {
-    var showLogoutDialog by remember { mutableStateOf(false) }
-    val user = AuthSession.user
-
-    if (showLogoutDialog) {
-        LogoutDialog(
-            onConfirm = {
-                showLogoutDialog = false
-                onLogoutClick()
-            },
-            onDismiss = { showLogoutDialog = false }
-        )
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        SectionHeader(
-            title = "Tài khoản",
-            subtitle = "Thông tin đăng nhập hiện tại"
-        )
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(56.dp)
-                            .background(PrimaryBlue.copy(alpha = 0.12f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.Person, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(30.dp))
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(user?.name ?: "Người dùng", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
-                        Text(user?.email ?: "Chưa có email", fontSize = 13.sp, color = Color.Gray)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(18.dp))
-                InfoRow("Vai trò", user?.role ?: "CUSTOMER")
-                InfoRow("Số điện thoại", user?.phone ?: "Chưa cập nhật")
-            }
-        }
-
-        Button(
-            onClick = { showLogoutDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Đăng xuất", color = Color.White, fontWeight = FontWeight.Bold)
-        }
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String, subtitle: String) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(title, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
-        Spacer(modifier = Modifier.height(6.dp))
-        Text(subtitle, fontSize = 14.sp, color = Color.Gray)
-    }
-}
-
-@Composable
-private fun EmptyStateCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(icon, contentDescription = null, tint = PrimaryBlue, modifier = Modifier.size(42.dp))
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(title, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(subtitle, fontSize = 14.sp, color = Color.Gray, lineHeight = 20.sp)
-        }
-    }
-}
-
-@Composable
-private fun InfoRow(label: String, value: String, valueColor: Color = Color(0xFF1F2937)) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(label, fontSize = 14.sp, color = Color.Gray)
-        Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = valueColor)
-    }
-}
-
-@Composable
-private fun StatusPill(status: String) {
-    val isConfirmed = status == "CONFIRMED"
-    val color = if (isConfirmed) Color(0xFF16A34A) else PrimaryBlue
-    Text(
-        text = status,
-        color = color,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .background(color.copy(alpha = 0.12f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-    )
-}
-
-@Composable
-private fun LogoutDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White,
-        shape = RoundedCornerShape(24.dp),
-        icon = {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Logout,
-                contentDescription = null,
-                tint = Color(0xFFEF4444),
-                modifier = Modifier.size(40.dp)
-            )
-        },
-        title = {
-            Text(
-                "Đăng xuất",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color(0xFF1F2937)
-            )
-        },
-        text = {
-            Text(
-                "Bạn có chắc chắn muốn đăng xuất không?",
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Đăng xuất", color = Color.White, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Huỷ", color = Color.Gray)
-            }
-        }
-    )
-}
-
-
+// ---------------------------------------------------------------------------
 // 6. Floating Bottom Navigation Bar
-
+// ---------------------------------------------------------------------------
 @Composable
-fun StandardBottomNavigationBar(
-    selectedIndex: Int,
-    onItemSelected: (Int) -> Unit
-) {
+fun FloatingBottomNavigationBar(onLogoutClick: () -> Unit) {
+    var selectedIndex by remember { mutableStateOf(0) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val navItems = listOf(
-        Pair("Trang Chủ", Icons.Default.Home),
-        Pair("Vé của tôi", Icons.Default.ConfirmationNumber),
-        Pair("Điểm đến", Icons.Default.LocationOn),
-        Pair("Tài khoản", Icons.Default.Person)
+        Icons.Default.Home,
+        Icons.Default.ConfirmationNumber,
+        Icons.Default.PinDrop,
+        Icons.Default.Person
     )
 
-    NavigationBar(
-        containerColor = Color.White,
-        contentColor = PrimaryBlue,
-        tonalElevation = 8.dp
-    ) {
-        navItems.forEachIndexed { index, pair ->
-            val label = pair.first
-            val icon = pair.second
-            val isSelected = selectedIndex == index
-            NavigationBarItem(
-                selected = isSelected,
-                onClick = { onItemSelected(index) },
-                icon = { Icon(imageVector = icon, contentDescription = label) },
-                label = { Text(text = label, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = PrimaryBlue,
-                    unselectedIconColor = Color.Gray,
-                    selectedTextColor = PrimaryBlue,
-                    unselectedTextColor = Color.Gray,
-                    indicatorColor = PrimaryBlue.copy(alpha = 0.1f)
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(24.dp),
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = PrimaryBlue,
+                    modifier = Modifier.size(40.dp)
                 )
-            )
+            },
+            title = {
+                Text(
+                    "Đăng xuất",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF1F2937)
+                )
+            },
+            text = {
+                Text(
+                    "Bạn có chắc chắn muốn đăng xuất không?",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogoutClick()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Đăng xuất", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Huỷ", color = Color.Gray)
+                }
+            }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .shadow(elevation = 16.dp, shape = RoundedCornerShape(32.dp))
+                .background(Color.White, RoundedCornerShape(32.dp))
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            navItems.forEachIndexed { index, icon ->
+                val isSelected = selectedIndex == index
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(if (isSelected) PrimaryBlue else Color.Transparent)
+                        .clickable {
+                            if (index == 3) {
+                                // Person tab → show logout dialog
+                                showLogoutDialog = true
+                            } else {
+                                selectedIndex = index
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = "Nav $index",
+                        tint = if (isSelected) Color.White else Color.Gray,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
     }
 }

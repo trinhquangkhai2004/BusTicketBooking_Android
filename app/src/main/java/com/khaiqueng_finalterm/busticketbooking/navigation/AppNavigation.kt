@@ -1,17 +1,12 @@
 package com.khaiqueng_finalterm.busticketbooking.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.BusListScreen
-import com.khaiqueng_finalterm.busticketbooking.ui.screens.ChatbotScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.CheckoutScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.HomeScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.LoginScreen
@@ -19,38 +14,28 @@ import com.khaiqueng_finalterm.busticketbooking.ui.screens.PaymentScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.RegisterScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.SeatSelectionScreen
 import com.khaiqueng_finalterm.busticketbooking.ui.screens.TicketDetailsScreen
-import com.khaiqueng_finalterm.busticketbooking.ui.viewmodels.AuthViewModel
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    val authViewModel: AuthViewModel = viewModel()
-    val authUiState by authViewModel.uiState.collectAsState()
 
     NavHost(navController = navController, startDestination = "login") {
 
         composable("login") {
-            LaunchedEffect(authUiState.isAuthenticated) {
-                if (authUiState.isAuthenticated) {
-                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
-                    authViewModel.clearAuthState()
-                }
-            }
             LoginScreen(
-                uiState = authUiState,
-                onLoginClick = authViewModel::login,
+                onLoginSuccess = {
+                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                },
                 onNavigateToRegister = { navController.navigate("register") }
             )
         }
 
         composable("register") {
             RegisterScreen(
-                uiState = authUiState,
-                onRegisterClick = authViewModel::register,
-                onNavigateToLogin = {
-                    authViewModel.clearAuthState()
-                    navController.popBackStack()
-                }
+                onRegisterSuccess = {
+                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                },
+                onNavigateToLogin = { navController.popBackStack() }
             )
         }
 
@@ -59,21 +44,11 @@ fun AppNavigation() {
                 onSearchClick = { from, to, date ->
                     navController.navigate("busList/$from/$to/$date")
                 },
-                onChatClick = {
-                    navController.navigate("chatbot")
-                },
                 onLogoutClick = {
-                    authViewModel.logout()
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
                 }
-            )
-        }
-
-        composable("chatbot") {
-            ChatbotScreen(
-                onBackClick = { navController.popBackStack() }
             )
         }
 

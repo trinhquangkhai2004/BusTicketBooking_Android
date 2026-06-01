@@ -1,12 +1,6 @@
 # Profile: docker
 # Dùng khi chạy trong Docker Compose - các host trỏ vào service names
 
-server:
-  error:
-    include-stacktrace: never
-    include-exception: false
-    include-message: always
-
 spring:
   datasource:
     url: jdbc:mysql://mysql:3306/bus_ticket_booking?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&characterEncoding=UTF-8
@@ -22,21 +16,6 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: false
-
-vnpay:
-  payment-url: ${VNPAY_PAYMENT_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
-  return-url: ${VNPAY_RETURN_URL:http://10.0.2.2:8088/api/payments/vnpay-return}
-  tmn-code: ${VNPAY_TMN_CODE:}
-  hash-secret: ${VNPAY_HASH_SECRET:}
-  hash-secret-key: ${VNPAY_HASH_SECRET_KEY:}
-  expire-minutes: ${VNPAY_EXPIRE_MINUTES:10}
-
-management:
-  health:
-    mail:
-      enabled: ${MANAGEMENT_HEALTH_MAIL_ENABLED:false}
-    rabbit:
-      enabled: ${MANAGEMENT_HEALTH_RABBIT_ENABLED:false}
 
 logging:
   level:
